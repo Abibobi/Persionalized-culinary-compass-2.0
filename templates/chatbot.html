@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CulinaryAI</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary-color: #ff6b6b;
+            --secondary-color: #ffd93d;
+            --text-color: #2d3436;
+            --light-bg: #fff5f5;
+            --message-bg: #f8f9fa;
+            --bot-message: #e3f2fd;
+            --user-message: #ff6b6b;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #chat-container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+
+        .chat-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .chat-header::before {
+            content: '👩‍🍳';
+            font-size: 1.8rem;
+        }
+
+        #chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            animation: messageSlide 0.3s ease-out;
+            position: relative;
+            margin: 5px 0;
+        }
+
+        .user-message {
+            background: var(--user-message);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message {
+            background: var(--bot-message);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .recipe-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .recipe-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .recipe-list a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .recipe-list a:hover {
+            color: #e64c4c;
+        }
+
+        .recipe-details {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            animation: expandDetails 0.3s ease-out;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #eee;
+            border-radius: 25px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        #user-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+        }
+
+        button {
+            padding: 12px 25px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: var(--bot-message);
+            border-radius: 15px;
+            align-self: flex-start;
+            margin: 5px 0;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: typing 1s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes expandDetails {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .nutrition-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .nutrition-item {
+            background: var(--light-bg);
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .recipe-tag {
+            display: inline-block;
+            padding: 4px 8px;
+            background: var(--secondary-color);
+            color: var(--text-color);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div class="chat-header">
+            <h2>CulinaryAI</h2>
+        </div>
+        <div id="chat-box">
+            <div class="message bot-message">
+                Hello! I'm your personal recipe assistant. Tell me what ingredients you have or what kind of dish you'd like to have! 🍳
+            </div>
+        </div>
+        <div class="typing-indicator" id="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Ask for a recipe..." autocomplete="off">
+            <button onclick="sendQuery()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function showTypingIndicator() {
+            $('.typing-indicator').show();
+            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+        }
+    
+        function hideTypingIndicator() {
+            $('.typing-indicator').hide();
+        }
+    
+        function appendMessage(content, isUser = false) {
+            const messageDiv = $('<div>')
+                .addClass(`message ${isUser ? 'user-message' : 'bot-message'}`)
+                .html(content);
+            $('#chat-box').append(messageDiv);
+            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+        }
+    
+        function buildDynamicResponse(query) {
+            // Define keywords we want to dynamically capture
+            let keywords = [];
+    
+            // Check for common keywords in the query
+            if (query.includes('spicy')) keywords.push("spicy");
+            if (query.includes('mild')) keywords.push("mild");
+            if (query.includes('dinner')) keywords.push("dinner");
+            if (query.includes('breakfast')) keywords.push("breakfast");
+            if (query.includes('lunch')) keywords.push("lunch");
+            if (query.includes('snack')) keywords.push("snack");
+            if (query.includes('drink')) keywords.push("drink");
+            if (query.includes('dessert')) keywords.push("dessert");
+            if (query.includes('healthy')) keywords.push("healthy");
+            if (query.includes('vegan')) keywords.push("vegan");
+            if (query.includes('vegetarian')) keywords.push("vegetarian");
+            if (query.includes('non-vegetarian')) keywords.push("non-vegetarian");
+            if (query.includes('gluten-free')) keywords.push("gluten-free");
+            if (query.includes('low-carb')) keywords.push("low-carb");
+            if (query.includes('high protein')) keywords.push("high-protein");
+            if (query.includes('rich in vitamins')) keywords.push("rich in vitamins");
+            if (query.includes('rich in fiber')) keywords.push("rich in fiber");
+            if (query.includes('low fat')) keywords.push("low in fat");
+            if (query.includes('low calorie')) keywords.push("low in calories");
+            if (query.includes('high calorie')) keywords.push("high in calories");
+    
+            // Expanded list of ingredients
+    const ingredients = [
+        "onion", "garlic", "ginger", "tomato", "potato", "carrot", "bell pepper", "spinach", 
+        "kale", "broccoli", "cauliflower", "zucchini", "eggplant", "cucumber", "lettuce", 
+        "avocado", "green beans", "peas", "corn", "mushrooms", "cabbage", "radish", 
+        "sweet potato", "yam", "squash", "chard", "celery", "leeks", "shallots", "fennel", 
+        "beets", "fresh herbs", "dried herbs", "salt", "pepper", "olive oil", "vegetable oil", 
+        "coconut oil", "ghee", "butter", "honey", "sugar", "brown sugar", "maple syrup", 
+        "vinegar", "soy sauce", "Worcestershire sauce", "mustard", "ketchup", "hot sauce",
+        "wheat flour", "tahini", "nut butter", "chia seeds", "flaxseeds", "sesame seeds", 
+        "nuts", "coconut", "dried fruits", "quinoa", "couscous", "rice", "pasta", "lentils", 
+        "beans", "tofu", "tempeh", "fish sauce", "coconut milk", "chicken broth", 
+        "vegetable broth", "eggs", "cheese", "cream", "yogurt", "milk", "buttermilk", 
+        "heavy cream", "baking powder", "baking soda", "flour", "cornstarch", "cocoa powder", 
+        "chocolate chips", "vanilla extract", "cinnamon", "nutmeg", "cardamom", "cloves", 
+        "curry powder", "paprika", "chili powder", "cumin", "coriander", "allspice", "saffron", 
+        "bay leaves", "fresh fruit", "granola", "pesto", "marinara sauce", "salsa",
+        "bitter gourd", "ridge gourd", "bottle gourd", "snake gourd", "drumstick", 
+        "taro", "kohlrabi", "pointed gourd", "Indian squash", "methi", "palak", 
+        "amaranth", "colocasia", "bamboo shoots"
+    ];
+
+    // Match ingredients in query (case-insensitive)
+    const matchedIngredients = ingredients.filter(ingredient => 
+        query.toLowerCase().includes(ingredient.toLowerCase())
+    );
+
+    if (matchedIngredients.length > 0) {
+        keywords.push("with " + matchedIngredients.join(", "));
+    }
+            // Check for time in minutes (using regex to match patterns like "30 minutes")
+            const timeMatch = query.match(/\b\d{1,3}\s?minutes?\b/i);
+            if (timeMatch) {
+                keywords.push(`ready in ${timeMatch[0]}`);
+            }
+    
+            // Build the response
+            return keywords.length > 0
+                ? "Here are some " + keywords.join(" ") + " recipes for you:"
+                : "Here are some recipes that might interest you:";
+        }
+    
+        function sendQuery() {
+            const query = $('#user-input').val();
+            if (query.trim() === '') return;
+    
+            appendMessage(`<strong>You:</strong> ${query}`, true);
+            $('#user-input').val('');
+            showTypingIndicator();
+    
+            $.ajax({
+                url: '/get_recipes/',
+                data: { query: query },
+                success: function(response) {
+                    hideTypingIndicator();
+    
+                    // Generate the dynamic response message
+                    const dynamicResponse = buildDynamicResponse(query);
+                    appendMessage(`<strong>Bot:</strong> ${dynamicResponse}`);
+    
+                    // Display recipe list if recipes are found
+                    if (response.recipes.length > 0) {
+                        let recipeList = "<ul class='recipe-list'>";
+                        response.recipes.forEach(recipe => {
+                            recipeList += `<li><a href="#" onclick="getRecipeDetail(${recipe.id})">${recipe.name}</a>: ${recipe.description}</li>`;
+                        });
+                        recipeList += "</ul>";
+                        appendMessage(recipeList);
+                    } else {
+                        appendMessage("<strong>Bot:</strong> I couldn't find any recipes matching your request. Try adjusting your criteria! 🤔");
+                    }
+                },
+                error: function() {
+                    hideTypingIndicator();
+                    appendMessage("<strong>Bot:</strong> Oops! Something went wrong while fetching recipes. Please try again! 😅");
+                }
+            });
+        }
+    
+        function getRecipeDetail(recipeId) {
+            showTypingIndicator();
+            $.ajax({
+                url: `/recipe_detail/${recipeId}/`,
+                success: function(response) {
+                    hideTypingIndicator();
+                    const recipe = response.recipe;
+                    let detailResponse = `<div class="recipe-details">
+                        <h3>${recipe.name}</h3>
+                        <p class="recipe-description">${recipe.description}</p>
+                        
+                        <div class="recipe-tags">
+                            ${recipe.is_vegetarian ? '<span class="recipe-tag">Vegetarian</span>' : ''}
+                            <span class="recipe-tag">🕒 ${recipe.cooking_time} mins</span>
+                            <span class="recipe-tag">🌶️ Spicy: ${recipe.spicy_level}/5</span>
+                        </div>
+    
+                        <h4>Ingredients:</h4>
+                        <p>${recipe.ingredients}</p>
+    
+                        <h4>Instructions:</h4>
+                        <p>${recipe.instructions}</p>
+    
+                        <h4>Nutrition Information:</h4>
+                        <div class="nutrition-grid">
+                            <div class="nutrition-item">
+                                <strong>Calories</strong><br>${recipe.calories}
+                            </div>
+                            <div class="nutrition-item">
+                                <strong>Protein</strong><br>${recipe.protein}g
+                            </div>
+                            <div class="nutrition-item">
+                                <strong>Carbs</strong><br>${recipe.carbs}g
+                            </div>
+                            <div class="nutrition-item">
+                                <strong>Fat</strong><br>${recipe.fat}g
+                            </div>
+                            <div class="nutrition-item">
+                                <strong>Fiber</strong><br>${recipe.fiber}g
+                            </div>
+                        </div>
+                    </div>`;
+                    appendMessage(detailResponse);
+                },
+                error: function() {
+                    hideTypingIndicator();
+                    appendMessage("<strong>Bot:</strong> Sorry, I couldn't fetch the recipe details right now. Please try again! 😕");
+                }
+            });
+        }
+    
+        $('#user-input').keypress(function (e) {
+            if (e.which === 13) sendQuery();
+        });
+    </script>
+    
+</body>
+</html>
