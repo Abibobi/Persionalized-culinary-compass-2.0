@@ -6,7 +6,6 @@ Shared across all environments. Environment-specific files
 """
 
 from pathlib import Path
-import os
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -67,7 +66,7 @@ ROOT_URLCONF = "pcc.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, 'templates')],
+        "DIRS": [BASE_DIR / 'templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
