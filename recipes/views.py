@@ -77,41 +77,42 @@ def filter_recipes_by_ingredients_and_diet(recipes, ingredients, calorie_filter=
     return filtered_recipes
 
 def parse_query(user_query):
-    user_query = (user_query or "").lower()
+    user_query = (user_query or "").strip()
+    query_lower = user_query.lower()
     doc = nlp_spacy(user_query)
     ingredients = set()
     calorie_filter, protein_filter, fat_filter, cooking_time_filter = None, None, None, None
     meal_type, is_vegetarian, spicy_level = None, None, None
     
-    if "high protein" in user_query:
+    if "high protein" in query_lower:
         protein_filter = "high"
-    if "low protein" in user_query:
+    if "low protein" in query_lower:
         protein_filter = "low"
-    if "low calorie" in user_query:
+    if "low calorie" in query_lower:
         calorie_filter = "low"
-    if "high calorie" in user_query:
+    if "high calorie" in query_lower:
         calorie_filter = "high"
-    if "low fat" in user_query:
+    if "low fat" in query_lower:
         fat_filter = "low"
-    if "high fat" in user_query:
+    if "high fat" in query_lower:
         fat_filter = "high"
-    if "breakfast" in user_query:
+    if "breakfast" in query_lower:
         meal_type = "breakfast"
-    if "lunch" in user_query:
+    if "lunch" in query_lower:
         meal_type = "lunch"
-    if "dinner" in user_query:
+    if "dinner" in query_lower:
         meal_type = "dinner"
-    if "snack" in user_query:
+    if "snack" in query_lower:
         meal_type = "snack"
-    if "vegetarian" in user_query:
+    if "vegetarian" in query_lower:
         is_vegetarian = True
-    if "non-vegetarian" in user_query or "meat" in user_query:
+    if "non-vegetarian" in query_lower or "meat" in query_lower:
         is_vegetarian = False
-    if "spicy" in user_query:
+    if "spicy" in query_lower:
         spicy_level = 4
-    if "mild" in user_query:
+    if "mild" in query_lower:
         spicy_level = 2
-    if "medium" in user_query:
+    if "medium" in query_lower:
         spicy_level = 3
     for token in doc:
         if token.like_num:
