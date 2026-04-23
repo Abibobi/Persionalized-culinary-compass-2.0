@@ -1,4 +1,4 @@
-Django==5.1.2
+Django==5.1.14
 django-allauth==65.0.2
 django-crispy-forms==2.3
 spacy==3.8.2
