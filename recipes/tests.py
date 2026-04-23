@@ -3,8 +3,10 @@ from django.core.management import call_command
 from django.urls import reverse
 from pathlib import Path
 import tempfile
+from unittest.mock import patch
 
 from .models import Recipe
+from . import views
 
 
 class RecipeViewsTests(TestCase):
@@ -64,3 +66,20 @@ class ImportRecipesCommandTests(TestCase):
         call_command("import_recipes", csv_path)
 
         self.assertEqual(Recipe.objects.count(), 0)
+
+    def test_import_recipes_skips_non_object_vitamins_json(self):
+        csv_path = self._write_csv(
+            "name,description,ingredients,category,protein,carbs,fat,fiber,vitamins,calories,cooking_time,spicy_level,instructions,is_vegetarian\n"
+            "Bad Vitamins,Desc,\"onion, garlic\",dinner,20,30,10,5,\"[]\",450,35,3,Step by step,TRUE\n"
+        )
+
+        call_command("import_recipes", csv_path)
+
+        self.assertEqual(Recipe.objects.count(), 0)
+
+
+class ViewsFallbackTests(TestCase):
+    def test_load_nlp_falls_back_to_blank_model(self):
+        with patch("recipes.views.spacy.load", side_effect=OSError):
+            nlp_model = views._load_nlp()
+        self.assertEqual(nlp_model.lang, "en")

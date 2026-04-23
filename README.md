@@ -60,7 +60,7 @@ export DJANGO_DB_PORT=5432
 ### **Security-related Environment Variables**
 ```bash
 export DJANGO_SECRET_KEY=replace-with-a-secure-random-value
-export DJANGO_DEBUG=False
+export DJANGO_DEBUG=False  # accepts: true/1 to enable, false otherwise
 export DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
@@ -79,5 +79,4 @@ python manage.py runserver
 ```
 
 ---
-
 
