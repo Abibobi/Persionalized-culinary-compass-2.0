@@ -2,4 +2,4 @@ Django==5.1.2
 django-allauth==65.0.2
 django-crispy-forms==2.3
 spacy==3.8.2
-psycopg2-binary==2.9.10
+psycopg2==2.9.10

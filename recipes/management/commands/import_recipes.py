@@ -24,14 +24,14 @@ class Command(BaseCommand):
                             description=self._required(row, "description"),
                             ingredients=self._required(row, "ingredients"),
                             category=self._required(row, "category"),
-                            protein=float(self._required(row, "protein")),
-                            carbs=float(self._required(row, "carbs")),
-                            fat=float(self._required(row, "fat")),
-                            fiber=float(self._required(row, "fiber")),
+                            protein=self._float_value(row, "protein"),
+                            carbs=self._float_value(row, "carbs"),
+                            fat=self._float_value(row, "fat"),
+                            fiber=self._float_value(row, "fiber"),
                             vitamins=self._parse_vitamins(row.get("vitamins")),
-                            calories=int(self._required(row, "calories")),
-                            cooking_time=int(self._required(row, "cooking_time")),
-                            spicy_level=int(self._required(row, "spicy_level")),
+                            calories=self._int_value(row, "calories"),
+                            cooking_time=self._int_value(row, "cooking_time"),
+                            spicy_level=self._int_value(row, "spicy_level"),
                             instructions=(row.get("instructions") or "").strip(),
                             is_vegetarian=self._parse_bool(row.get("is_vegetarian")),
                         )
@@ -76,3 +76,19 @@ class Command(BaseCommand):
         if not isinstance(parsed, dict):
             raise ValueError("Field 'vitamins' must be a JSON object.")
         return parsed
+
+    @classmethod
+    def _float_value(cls, row, key):
+        value = cls._required(row, key)
+        try:
+            return float(value)
+        except ValueError as exc:
+            raise ValueError(f"Invalid float for '{key}': {value}") from exc
+
+    @classmethod
+    def _int_value(cls, row, key):
+        value = cls._required(row, key)
+        try:
+            return int(value)
+        except ValueError as exc:
+            raise ValueError(f"Invalid integer for '{key}': {value}") from exc
