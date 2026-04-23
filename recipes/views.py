@@ -3,12 +3,9 @@ import logging
 from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q
 from .models import Recipe
 from spacy.matcher import PhraseMatcher
 
-# Load spaCy model
-nlp_spacy = spacy.load("en_core_web_sm")
 logger = logging.getLogger(__name__)
 
 common_ingredients = list(set([
@@ -30,6 +27,19 @@ common_ingredients = list(set([
     "taro", "kohlrabi", "pointed gourd", "Indian squash", "methi", "palak", "amaranth", "colocasia", 
     "bamboo shoots"
 ]))
+
+
+def _load_nlp():
+    try:
+        return spacy.load("en_core_web_sm")
+    except OSError:
+        logger.warning("spaCy model 'en_core_web_sm' not found, falling back to blank English model.")
+        return spacy.blank("en")
+
+
+nlp_spacy = _load_nlp()
+ingredient_matcher = PhraseMatcher(nlp_spacy.vocab, attr="LOWER")
+ingredient_matcher.add("Ingredients", [nlp_spacy.make_doc(ing) for ing in common_ingredients])
 
 
 def filter_recipes_by_ingredients_and_diet(recipes, ingredients, calorie_filter=None, protein_filter=None, 
@@ -67,50 +77,48 @@ def filter_recipes_by_ingredients_and_diet(recipes, ingredients, calorie_filter=
     return filtered_recipes
 
 def parse_query(user_query):
-    doc = nlp_spacy(user_query.lower())
+    query_lower = (user_query or "").strip().lower()
+    doc = nlp_spacy(query_lower)
     ingredients = set()
     calorie_filter, protein_filter, fat_filter, cooking_time_filter = None, None, None, None
     meal_type, is_vegetarian, spicy_level = None, None, None
     
-    if "high protein" in user_query:
+    if "high protein" in query_lower:
         protein_filter = "high"
-    if "low protein" in user_query:
+    if "low protein" in query_lower:
         protein_filter = "low"
-    if "low calorie" in user_query:
+    if "low calorie" in query_lower:
         calorie_filter = "low"
-    if "high calorie" in user_query:
+    if "high calorie" in query_lower:
         calorie_filter = "high"
-    if "low fat" in user_query:
+    if "low fat" in query_lower:
         fat_filter = "low"
-    if "high fat" in user_query:
+    if "high fat" in query_lower:
         fat_filter = "high"
-    if "breakfast" in user_query:
+    if "breakfast" in query_lower:
         meal_type = "breakfast"
-    if "lunch" in user_query:
+    if "lunch" in query_lower:
         meal_type = "lunch"
-    if "dinner" in user_query:
+    if "dinner" in query_lower:
         meal_type = "dinner"
-    if "snack" in user_query:
+    if "snack" in query_lower:
         meal_type = "snack"
-    if "vegetarian" in user_query:
+    if "vegetarian" in query_lower:
         is_vegetarian = True
-    if "non-vegetarian" in user_query or "meat" in user_query:
+    if "non-vegetarian" in query_lower or "meat" in query_lower:
         is_vegetarian = False
-    if "spicy" in user_query:
+    if "spicy" in query_lower:
         spicy_level = 4
-    if "mild" in user_query:
+    if "mild" in query_lower:
         spicy_level = 2
-    if "medium" in user_query:
+    if "medium" in query_lower:
         spicy_level = 3
     for token in doc:
         if token.like_num:
             next_token = doc[token.i + 1] if token.i + 1 < len(doc) else None
             if next_token and next_token.text in ["minutes", "minute"]:
                 cooking_time_filter = int(token.text)
-    from spacy.matcher import PhraseMatcher
-    matcher = PhraseMatcher(nlp_spacy.vocab)
-    matcher.add("Ingredients", [nlp_spacy.make_doc(ing) for ing in common_ingredients])
-    matches = matcher(doc)
+    matches = ingredient_matcher(doc)
     for match_id, start, end in matches:
         ingredients.add(doc[start:end].text.lower())
     return {
@@ -133,10 +141,13 @@ def get_recipes(request):
             all_recipes, **query_data)
         request.session['filtered_recipes'] = [r.id for r in filtered_recipes]
         page_number = 1
-    paginator = Paginator(Recipe.objects.filter(id__in=request.session['filtered_recipes']), 5)
+    paginator = Paginator(
+        Recipe.objects.filter(id__in=request.session['filtered_recipes']).order_by("id"),
+        5,
+    )
     try:
         recipes_page = paginator.page(page_number)
-    except:
+    except (EmptyPage, PageNotAnInteger):
         return JsonResponse({'message': 'No more recipes found for your search query.'}, status=404)
     recipe_data = [{
         'id': recipe.id, 'name': recipe.name, 'description': recipe.description

@@ -46,7 +46,23 @@ python -m spacy download en_core_web_sm
 SQLite is the default database, and no extra setup is needed. The database file will be created automatically.
 
 ### **PostgreSQL Setup**
-download and connect your database to this project(update the setting.py with your credentials)
+Set environment variables before running the app:
+
+```bash
+export DJANGO_DB_ENGINE=django.db.backends.postgresql
+export DJANGO_DB_NAME=pcc
+export DJANGO_DB_USER=postgres
+export DJANGO_DB_PASSWORD=your_password
+export DJANGO_DB_HOST=localhost
+export DJANGO_DB_PORT=5432
+```
+
+### **Security-related Environment Variables**
+```bash
+export DJANGO_SECRET_KEY=replace-with-a-secure-random-value
+export DJANGO_DEBUG=False  # accepts: true/1 to enable, false otherwise
+export DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+```
 
 ## 📥 Import Recipes from CSV
 Run the following Django command to import data:  
@@ -63,6 +79,4 @@ python manage.py runserver
 ```
 
 ---
-
-
 
