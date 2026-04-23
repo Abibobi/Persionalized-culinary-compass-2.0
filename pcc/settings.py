@@ -98,7 +98,7 @@ if DB_ENGINE == "django.db.backends.sqlite3":
     DATABASES = {
         "default": {
             "ENGINE": DB_ENGINE,
-            "NAME": os.getenv("DJANGO_DB_NAME", BASE_DIR / "db.sqlite3"),
+            "NAME": os.getenv("DJANGO_DB_NAME", str(BASE_DIR / "db.sqlite3")),
         }
     }
 else:
