@@ -78,7 +78,7 @@ def filter_recipes_by_ingredients_and_diet(recipes, ingredients, calorie_filter=
 
 def parse_query(user_query):
     user_query = (user_query or "").lower()
-    doc = nlp_spacy(user_query.lower())
+    doc = nlp_spacy(user_query)
     ingredients = set()
     calorie_filter, protein_filter, fat_filter, cooking_time_filter = None, None, None, None
     meal_type, is_vegetarian, spicy_level = None, None, None
