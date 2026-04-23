@@ -141,7 +141,10 @@ def get_recipes(request):
             all_recipes, **query_data)
         request.session['filtered_recipes'] = [r.id for r in filtered_recipes]
         page_number = 1
-    paginator = Paginator(Recipe.objects.filter(id__in=request.session['filtered_recipes']), 5)
+    paginator = Paginator(
+        Recipe.objects.filter(id__in=request.session['filtered_recipes']).order_by("id"),
+        5,
+    )
     try:
         recipes_page = paginator.page(page_number)
     except (EmptyPage, PageNotAnInteger):
