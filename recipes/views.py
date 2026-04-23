@@ -3,12 +3,9 @@ import logging
 from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q
 from .models import Recipe
 from spacy.matcher import PhraseMatcher
 
-# Load spaCy model
-nlp_spacy = spacy.load("en_core_web_sm")
 logger = logging.getLogger(__name__)
 
 common_ingredients = list(set([
@@ -30,6 +27,19 @@ common_ingredients = list(set([
     "taro", "kohlrabi", "pointed gourd", "Indian squash", "methi", "palak", "amaranth", "colocasia", 
     "bamboo shoots"
 ]))
+
+
+def _load_nlp():
+    try:
+        return spacy.load("en_core_web_sm")
+    except OSError:
+        logger.warning("spaCy model 'en_core_web_sm' not found, falling back to blank English model.")
+        return spacy.blank("en")
+
+
+nlp_spacy = _load_nlp()
+ingredient_matcher = PhraseMatcher(nlp_spacy.vocab, attr="LOWER")
+ingredient_matcher.add("Ingredients", [nlp_spacy.make_doc(ing) for ing in common_ingredients])
 
 
 def filter_recipes_by_ingredients_and_diet(recipes, ingredients, calorie_filter=None, protein_filter=None, 
@@ -67,6 +77,7 @@ def filter_recipes_by_ingredients_and_diet(recipes, ingredients, calorie_filter=
     return filtered_recipes
 
 def parse_query(user_query):
+    user_query = (user_query or "").lower()
     doc = nlp_spacy(user_query.lower())
     ingredients = set()
     calorie_filter, protein_filter, fat_filter, cooking_time_filter = None, None, None, None
@@ -107,10 +118,7 @@ def parse_query(user_query):
             next_token = doc[token.i + 1] if token.i + 1 < len(doc) else None
             if next_token and next_token.text in ["minutes", "minute"]:
                 cooking_time_filter = int(token.text)
-    from spacy.matcher import PhraseMatcher
-    matcher = PhraseMatcher(nlp_spacy.vocab)
-    matcher.add("Ingredients", [nlp_spacy.make_doc(ing) for ing in common_ingredients])
-    matches = matcher(doc)
+    matches = ingredient_matcher(doc)
     for match_id, start, end in matches:
         ingredients.add(doc[start:end].text.lower())
     return {
@@ -136,7 +144,7 @@ def get_recipes(request):
     paginator = Paginator(Recipe.objects.filter(id__in=request.session['filtered_recipes']), 5)
     try:
         recipes_page = paginator.page(page_number)
-    except:
+    except (EmptyPage, PageNotAnInteger):
         return JsonResponse({'message': 'No more recipes found for your search query.'}, status=404)
     recipe_data = [{
         'id': recipe.id, 'name': recipe.name, 'description': recipe.description
