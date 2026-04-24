@@ -1,5 +1,6 @@
 import csv
 import json
+import ast
 from django.core.management.base import BaseCommand, CommandError
 from recipes.models import Recipe
 
@@ -37,7 +38,7 @@ class Command(BaseCommand):
                         )
                         imported_count += 1
                         self.stdout.write(self.style.SUCCESS(f'Successfully imported recipe: {recipe.name}'))
-                    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+                    except (ValueError, TypeError, json.JSONDecodeError, SyntaxError) as exc:
                         skipped_count += 1
                         self.stderr.write(
                             self.style.WARNING(f"Skipping row {row_number}: {exc}")
@@ -72,9 +73,14 @@ class Command(BaseCommand):
         if not value:
             return {}
 
-        parsed = json.loads(value)
+        try:
+            # Using ast.literal_eval instead of json.loads to handle single quotes
+            parsed = ast.literal_eval(value)
+        except (ValueError, SyntaxError) as e:
+             raise ValueError(f"Invalid format for 'vitamins': {e}")
+            
         if not isinstance(parsed, dict):
-            raise ValueError("Field 'vitamins' must be a JSON object.")
+            raise ValueError("Field 'vitamins' must be a dictionary/object.")
         return parsed
 
     @classmethod

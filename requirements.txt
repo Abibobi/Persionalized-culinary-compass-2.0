@@ -3,3 +3,11 @@ django-allauth==65.0.2
 django-crispy-forms==2.3
 spacy==3.8.2
 psycopg2==2.9.10
+djangorestframework
+drf-spectacular
+psycopg[binary]
+redis
+celery
+django-filter
+pytest
+pytest-django

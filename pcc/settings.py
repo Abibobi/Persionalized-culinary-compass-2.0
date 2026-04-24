@@ -50,7 +50,15 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "recipes",
     "crispy_forms",
-    
+    "rest_framework",
+    "drf_spectacular",
+    "django_filters",
+    "accounts",
+    "recommendations",
+    "safety",
+    "planner",
+    "api",
+
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -162,6 +170,29 @@ AUTHENTICATION_BACKENDS = (
 LOGIN_REDIRECT_URL = '/profile'     # Redirect after login
 LOGOUT_REDIRECT_URL = '/base'    # Redirect after logout
 
+# Django REST Framework Settings
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
 
+# drf_spectacular (OpenAPI) Settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Personalized Culinary Compass API",
+    "DESCRIPTION": "Production-style API for recipe discovery, personalization, safety checks, and meal planning.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "TAGS": [
+        {"name": "Health", "description": "Service health and status checks"},
+        {"name": "Auth", "description": "Authentication endpoints"},
+        {"name": "Profile", "description": "User profile and onboarding"},
+        {"name": "Search", "description": "Recipe search and recommendations"},
+        {"name": "Safety", "description": "Warnings and safety explanations"},
+        {"name": "Planner", "description": "Meal plan generation and management"},
+    ],
+}
 
-
+# Celery Settings
+# Pointing to a local Redis instance on default port 6379, database 0
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
