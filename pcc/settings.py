@@ -198,9 +198,3 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
-
-print("DB_USER:", os.getenv("DJANGO_DB_USER"))
-print("DB_PASSWORD:", os.getenv("DJANGO_DB_PASSWORD"))
-print("DB_NAME:", os.getenv("DJANGO_DB_NAME"))
-print("DB_HOST:", os.getenv("DJANGO_DB_HOST"))
-print("DB_PORT:", os.getenv("DJANGO_DB_PORT"))
