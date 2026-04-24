@@ -12,8 +12,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -103,6 +105,7 @@ WSGI_APPLICATION = "pcc.wsgi.application"
 DB_ENGINE = os.getenv("DJANGO_DB_ENGINE", "django.db.backends.sqlite3")
 
 if DB_ENGINE == "django.db.backends.sqlite3":
+    # Fallback SQLite configuration
     DATABASES = {
         "default": {
             "ENGINE": DB_ENGINE,
@@ -110,14 +113,15 @@ if DB_ENGINE == "django.db.backends.sqlite3":
         }
     }
 else:
+    # Primary PostgreSQL configuration (Loaded via .env)
     DATABASES = {
-        "default": {
-            "ENGINE": DB_ENGINE,
-            "NAME": os.getenv("DJANGO_DB_NAME", "pcc"),
-            "USER": os.getenv("DJANGO_DB_USER", "postgres"),
-            "PASSWORD": os.getenv("DJANGO_DB_PASSWORD", ""),
-            "HOST": os.getenv("DJANGO_DB_HOST", "localhost"),
-            "PORT": os.getenv("DJANGO_DB_PORT", "5432"),
+        'default': {
+            'ENGINE': DB_ENGINE, 
+            'NAME': os.getenv('DJANGO_DB_NAME', 'pcc'),
+            'USER': os.getenv('DJANGO_DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DJANGO_DB_PASSWORD', 'postgres'),
+            'HOST': os.getenv('DJANGO_DB_HOST', 'localhost'),
+            'PORT': os.getenv('DJANGO_DB_PORT', '5432'),
         }
     }
 
@@ -164,7 +168,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTHENTICATION_BACKENDS = (
-    'allauth.account.auth_backends.AuthenticationBackend',
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
 )
 
 LOGIN_REDIRECT_URL = '/profile'     # Redirect after login
@@ -178,21 +183,24 @@ REST_FRAMEWORK = {
 # drf_spectacular (OpenAPI) Settings
 SPECTACULAR_SETTINGS = {
     "TITLE": "Personalized Culinary Compass API",
-    "DESCRIPTION": "Production-style API for recipe discovery, personalization, safety checks, and meal planning.",
+    "DESCRIPTION": "API docs for Personalized Culinary Compass 2.0",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    "COMPONENT_SPLIT_REQUEST": True,
     "TAGS": [
-        {"name": "Health", "description": "Service health and status checks"},
-        {"name": "Auth", "description": "Authentication endpoints"},
-        {"name": "Profile", "description": "User profile and onboarding"},
-        {"name": "Search", "description": "Recipe search and recommendations"},
-        {"name": "Safety", "description": "Warnings and safety explanations"},
-        {"name": "Planner", "description": "Meal plan generation and management"},
+        {"name": "Health", "description": "Health and status endpoints"},
     ],
 }
 
-# Celery Settings
-# Pointing to a local Redis instance on default port 6379, database 0
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# Celery (Redis)
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+
+print("DB_USER:", os.getenv("DJANGO_DB_USER"))
+print("DB_PASSWORD:", os.getenv("DJANGO_DB_PASSWORD"))
+print("DB_NAME:", os.getenv("DJANGO_DB_NAME"))
+print("DB_HOST:", os.getenv("DJANGO_DB_HOST"))
+print("DB_PORT:", os.getenv("DJANGO_DB_PORT"))
