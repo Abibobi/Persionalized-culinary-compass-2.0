@@ -3,6 +3,8 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from .services.normalizer import normalize_query
+
 
 from .models import SearchLog
 from .serializers import (
@@ -26,8 +28,9 @@ def search_recipes(request):
     req.is_valid(raise_exception=True)
 
     raw_query = req.validated_data["query"]
-    normalized_query = raw_query.strip().lower()
+    normalized_query = normalize_query(raw_query)
     parsed_filters = {}
+    
 
     # TODO (Phase 2+): real parser + retrieval + ranking
     results = []

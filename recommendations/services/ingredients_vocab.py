@@ -1,0 +1,17 @@
+INGREDIENT_VOCAB = [
+    "chicken",
+    "beef",
+    "egg",
+    "rice",
+    "tomato",
+    "onion",
+    "garlic",
+    "cheese",
+    "spinach",
+    "potato",
+    "carrot",
+    "pepper",
+    "milk",
+    "butter",
+    "yogurt",
+]

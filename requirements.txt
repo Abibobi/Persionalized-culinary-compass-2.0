@@ -12,3 +12,4 @@ django-filter
 pytest
 pytest-django
 python-dotenv==1.0.1
+rapidfuzz==3.10.1
