@@ -7,6 +7,7 @@ from .services.normalizer import normalize_query
 from .services.parser import parse_filters
 from recipes.models import Recipe
 from .serializers import SearchRequestSerializer, SearchResponseSerializer, RecipeSearchResultSerializer
+from .services.ranking import score_recipe
 
 from .models import SearchLog
 from .serializers import (
@@ -53,7 +54,14 @@ def search_recipes(request):
         qs = qs.filter(calories__lte=parsed_filters["max_calories"])
 
     qs = qs[:20]
-    results = RecipeSearchResultSerializer(qs, many=True).data
+    recipes = list(qs)
+    recipes.sort(key=score_recipe, reverse=True)
+    
+    warnings = []
+
+    # TODO Phase 3: allergy cross-check + nutrition risk
+    results = RecipeSearchResultSerializer(recipes, many=True).data
+    result_count = len(results)
 
 
     latency_ms = int((time.perf_counter() - start) * 1000)
