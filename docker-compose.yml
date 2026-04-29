@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    container_name: pcc_db
+    environment:
+      POSTGRES_DB: pcc
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pcc_postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: pcc_redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  pcc_postgres_data:
