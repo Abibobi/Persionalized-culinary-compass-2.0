@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .services.normalizer import normalize_query
+from .services.parser import parse_filters
 
 
 from .models import SearchLog
@@ -29,7 +30,7 @@ def search_recipes(request):
 
     raw_query = req.validated_data["query"]
     normalized_query = normalize_query(raw_query)
-    parsed_filters = {}
+    parsed_filters = parse_filters(normalized_query)
     
 
     # TODO (Phase 2+): real parser + retrieval + ranking
