@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import SearchLog
+from recipes.models import Recipe
 
 
 class SearchRequestSerializer(serializers.Serializer):
@@ -26,3 +27,8 @@ class SearchResponseSerializer(serializers.Serializer):
     parsed_filters = serializers.DictField()
     results = serializers.ListField()
     warnings = serializers.ListField()
+
+class RecipeSearchResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = ("id", "name", "category", "calories", "cooking_time")

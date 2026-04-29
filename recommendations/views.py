@@ -5,7 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .services.normalizer import normalize_query
 from .services.parser import parse_filters
-
+from recipes.models import Recipe
+from .serializers import SearchRequestSerializer, SearchResponseSerializer, RecipeSearchResultSerializer
 
 from .models import SearchLog
 from .serializers import (
@@ -32,9 +33,28 @@ def search_recipes(request):
     normalized_query = normalize_query(raw_query)
     parsed_filters = parse_filters(normalized_query)
     
+    qs = Recipe.objects.all()
 
-    # TODO (Phase 2+): real parser + retrieval + ranking
-    results = []
+    # diet_type → map to is_vegetarian
+    diet = parsed_filters.get("diet_type")
+    if diet in {"vegetarian", "vegan"}:
+        qs = qs.filter(is_vegetarian=True)
+
+    # meal_type → category
+    if parsed_filters.get("meal_type"):
+        qs = qs.filter(category__iexact=parsed_filters["meal_type"])
+
+    # max_time_min → cooking_time
+    if parsed_filters.get("max_time_min"):
+        qs = qs.filter(cooking_time__lte=parsed_filters["max_time_min"])
+
+    # max_calories → calories
+    if parsed_filters.get("max_calories"):
+        qs = qs.filter(calories__lte=parsed_filters["max_calories"])
+
+    qs = qs[:20]
+    results = RecipeSearchResultSerializer(qs, many=True).data
+
 
     latency_ms = int((time.perf_counter() - start) * 1000)
 
