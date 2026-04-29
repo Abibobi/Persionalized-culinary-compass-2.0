@@ -9,6 +9,7 @@ from recipes.models import Recipe
 from .serializers import SearchRequestSerializer, SearchResponseSerializer, RecipeSearchResultSerializer
 from .services.ranking import score_recipe
 from safety.services.safety_engine import run_safety_checks
+from .services.personalization import profile_score
 
 from .models import SearchLog
 from .serializers import (
@@ -56,7 +57,14 @@ def search_recipes(request):
 
     qs = qs[:20]
     recipes = list(qs)
-    recipes.sort(key=score_recipe, reverse=True)
+
+    def combined_score(recipe):
+        base = score_recipe(recipe)
+        boost = profile_score(request.user.profile, recipe)
+        return base + boost
+
+    recipes.sort(key=combined_score, reverse=True)
+    
     
     results = []
     warnings = []
