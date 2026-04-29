@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCC Dashboard</title>
+    <style>
+        :root {
+            --bg: #f5f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #ef4444;
+            --accent-soft: #fee2e2;
+            --line: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #fff1f2, #f8fafc);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .wrap {
+            width: min(1000px, 92vw);
+            margin: 36px auto;
+            display: grid;
+            gap: 18px;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .top h1 {
+            font-size: 24px;
+        }
+
+        .actions a {
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-left: 10px;
+            border: 1px solid var(--line);
+            color: var(--text);
+            background: #fff;
+        }
+
+        .actions a.primary {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .card h3 {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .metric {
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .section {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .section h2 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: #991b1b;
+            font-size: 12px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        li {
+            border-top: 1px solid var(--line);
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        li:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .empty {
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px dashed var(--line);
+            color: var(--muted);
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 560px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .top {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .actions a {
+                margin-left: 0;
+                margin-right: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header class="top">
+            <div>
+                <h1>Dashboard</h1>
+                <p class="muted">Personalized Culinary Compass</p>
+            </div>
+            <div class="actions">
+                <a class="primary" href="/bot/chat/">Open Chatbot</a>
+                <a href="/accounts/logout/">Logout</a>
+            </div>
+        </header>
+
+        <section class="grid">
+            <div class="card">
+                <h3>Saved Recipes</h3>
+                <div class="metric" id="saved-count">0</div>
+            </div>
+            <div class="card">
+                <h3>Diet Type</h3>
+                <div class="metric" id="diet-type">-</div>
+            </div>
+            <div class="card">
+                <h3>Allergies</h3>
+                <div class="metric" id="allergy-count">0</div>
+            </div>
+            <div class="card">
+                <h3>Health Conditions</h3>
+                <div class="metric" id="condition-count">0</div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Profile Snapshot</h2>
+            <div id="profile-chips"></div>
+        </section>
+
+        <section class="section">
+            <h2>Saved Recipes</h2>
+            <ul id="saved-list"></ul>
+            <div id="saved-empty" class="empty" style="display:none;">No saved recipes yet.</div>
+        </section>
+    </div>
+
+    <script>
+        async function fetchJson(url) {
+            const response = await fetch(url, { credentials: "same-origin" });
+            if (!response.ok) {
+                throw new Error("Request failed");
+            }
+            return response.json();
+        }
+
+        function appendChip(container, text) {
+            const chip = document.createElement("span");
+            chip.className = "chip";
+            chip.textContent = text;
+            container.appendChild(chip);
+        }
+
+        async function loadDashboard() {
+            const summary = await fetchJson("/api/v1/users/dashboard/summary/");
+            const saved = await fetchJson("/api/v1/users/recipes/saved/");
+
+            document.getElementById("saved-count").textContent = summary.stats.saved_recipes_count;
+            document.getElementById("diet-type").textContent = summary.profile.diet_type || "-";
+            document.getElementById("allergy-count").textContent = summary.profile.allergies_count;
+            document.getElementById("condition-count").textContent = summary.profile.health_conditions_count;
+
+            const chips = document.getElementById("profile-chips");
+            chips.innerHTML = "";
+            appendChip(chips, "User: " + summary.user.username);
+            appendChip(chips, "Onboarding: " + (summary.profile.onboarding_completed ? "completed" : "pending"));
+            if (summary.profile.calorie_target) {
+                appendChip(chips, "Calories target: " + summary.profile.calorie_target);
+            }
+            if (summary.profile.max_cooking_time_min) {
+                appendChip(chips, "Max cook time: " + summary.profile.max_cooking_time_min + " min");
+            }
+
+            const list = document.getElementById("saved-list");
+            const empty = document.getElementById("saved-empty");
+            list.innerHTML = "";
+            if (!saved.length) {
+                empty.style.display = "block";
+                return;
+            }
+
+            empty.style.display = "none";
+            saved.forEach((item) => {
+                const li = document.createElement("li");
+                const title = document.createElement("span");
+                title.textContent = item.recipe.name;
+                const date = document.createElement("span");
+                date.className = "muted";
+                date.textContent = new Date(item.created_at).toLocaleDateString();
+                li.appendChild(title);
+                li.appendChild(date);
+                list.appendChild(li);
+            });
+        }
+
+        loadDashboard().catch(() => {
+            const chips = document.getElementById("profile-chips");
+            chips.innerHTML = "<div class='empty'>Unable to load dashboard data. Please login first.</div>";
+        });
+    </script>
+</body>
+</html>
