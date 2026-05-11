@@ -8,6 +8,8 @@ from .services.parser import parse_filters
 from recipes.models import Recipe
 from .serializers import SearchRequestSerializer, SearchResponseSerializer, RecipeSearchResultSerializer
 from .services.ranking import score_recipe
+from safety.services.safety_engine import run_safety_checks
+from .services.personalization import profile_score
 
 from .models import SearchLog
 from .serializers import (
@@ -55,12 +57,24 @@ def search_recipes(request):
 
     qs = qs[:20]
     recipes = list(qs)
-    recipes.sort(key=score_recipe, reverse=True)
+
+    def combined_score(recipe):
+        base = score_recipe(recipe)
+        boost = profile_score(request.user.profile, recipe)
+        return base + boost
+
+    recipes.sort(key=combined_score, reverse=True)
     
+    
+    results = []
     warnings = []
 
-    # TODO Phase 3: allergy cross-check + nutrition risk
-    results = RecipeSearchResultSerializer(recipes, many=True).data
+    for recipe in recipes[:20]:
+        recipe_warnings = run_safety_checks(request.user.profile, recipe)
+        if recipe_warnings:
+            warnings.append({"recipe_id": recipe.id, "warnings": recipe_warnings})
+
+    results = RecipeSearchResultSerializer(recipes[:20], many=True).data
     result_count = len(results)
 
 
@@ -80,7 +94,7 @@ def search_recipes(request):
         "normalized_query": normalized_query,
         "parsed_filters": parsed_filters,
         "results": results,
-        "warnings": [],
+        "warnings": warnings,
     }
 
     return Response(response)

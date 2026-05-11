@@ -13,6 +13,11 @@ class MeSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    health_conditions = serializers.ListField(child=serializers.CharField(), required=False)
+    allergies = serializers.ListField(child=serializers.CharField(), required=False)
+    disliked_ingredients = serializers.ListField(child=serializers.CharField(), required=False)
+    preferred_cuisines = serializers.ListField(child=serializers.CharField(), required=False)
+
     class Meta:
         model = UserProfile
         fields = (
@@ -34,6 +39,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ("created_at", "updated_at")
 
 class OnboardingSerializer(serializers.ModelSerializer):
+    health_conditions = serializers.ListField(child=serializers.CharField(), required=False)
+    allergies = serializers.ListField(child=serializers.CharField(), required=False)
+    disliked_ingredients = serializers.ListField(child=serializers.CharField(), required=False)
+    preferred_cuisines = serializers.ListField(child=serializers.CharField(), required=False)
+    
     class Meta:
         model = UserProfile
         fields = (
