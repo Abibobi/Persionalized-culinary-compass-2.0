@@ -1,10 +1,11 @@
-from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth import authenticate, get_user_model
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import SignupSerializer, LoginSerializer, MeSerializer
+from .serializers import SignupSerializer, LoginSerializer, MeSerializer, AuthTokenSerializer
 
 User = get_user_model()
 
@@ -13,7 +14,7 @@ User = get_user_model()
     tags=["Auth"],
     summary="Sign up user",
     request=SignupSerializer,
-    responses={201: MeSerializer},
+    responses={201: AuthTokenSerializer},
 )
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -21,15 +22,15 @@ def signup_view(request):
     serializer = SignupSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
-    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-    return Response(MeSerializer(user).data, status=201)
+    payload = _token_payload(user)
+    return Response(payload, status=201)
 
 
 @extend_schema(
     tags=["Auth"],
     summary="Login user with username or email",
     request=LoginSerializer,
-    responses={200: MeSerializer},
+    responses={200: AuthTokenSerializer},
 )
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -49,13 +50,21 @@ def login_view(request):
     if user is None:
         return Response({"detail": "Invalid credentials."}, status=400)
 
-    login(request, user)
-    return Response(MeSerializer(user).data)
+    payload = _token_payload(user)
+    return Response(payload)
 
 
 @extend_schema(tags=["Auth"], summary="Logout user")
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    logout(request)
     return Response({"status": "logged_out"})
+
+
+def _token_payload(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+        "user": MeSerializer(user).data,
+    }

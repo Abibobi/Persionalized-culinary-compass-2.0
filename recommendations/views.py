@@ -5,22 +5,17 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .services.normalizer import normalize_query
 from .services.parser import parse_filters
+from .services.gemini_fallback import gemini_recipe_suggestions
 from recipes.models import Recipe
-from .serializers import SearchRequestSerializer, SearchResponseSerializer, RecipeSearchResultSerializer
-from .services.ranking import score_recipe
-from safety.services.safety_engine import run_safety_checks
-from .services.personalization import profile_score
-
 from .models import SearchLog
-from .serializers import (
-    SearchRequestSerializer,
-    SearchResponseSerializer,
-)
+from .serializers import SearchRequestSerializer, SearchResponseSerializer, RecipeSearchResultSerializer
+from .services.ranking import rank_recipes
+from .services.search_logger import log_search
 
 
 @extend_schema(
     tags=["Search"],
-    summary="Search recipes (skeleton)",
+    summary="Search recipes with hybrid retrieval and safety-aware ranking",
     request=SearchRequestSerializer,
     responses={200: SearchResponseSerializer},
 )
@@ -55,32 +50,42 @@ def search_recipes(request):
     if parsed_filters.get("max_calories"):
         qs = qs.filter(calories__lte=parsed_filters["max_calories"])
 
-    qs = qs[:20]
+    qs = qs[:50]
     recipes = list(qs)
 
-    def combined_score(recipe):
-        base = score_recipe(recipe)
-        boost = profile_score(request.user.profile, recipe)
-        return base + boost
+    ranked, _blocked = rank_recipes(
+        recipes,
+        parsed_filters=parsed_filters,
+        user_profile=request.user.profile,
+        query=normalized_query,
+    )
 
-    recipes.sort(key=combined_score, reverse=True)
-    
-    
     results = []
     warnings = []
 
-    for recipe in recipes[:20]:
-        recipe_warnings = run_safety_checks(request.user.profile, recipe)
-        if recipe_warnings:
-            warnings.append({"recipe_id": recipe.id, "warnings": recipe_warnings})
+    for entry in ranked[:20]:
+        recipe = entry["recipe"]
+        recipe_data = RecipeSearchResultSerializer(recipe).data
+        recipe_data["score"] = entry["score"]
+        recipe_data["explanation"] = entry["explanation"]
+        results.append(recipe_data)
 
-    results = RecipeSearchResultSerializer(recipes[:20], many=True).data
-    result_count = len(results)
+        if entry["warnings"]:
+            warnings.append({"recipe_id": recipe.id, "warnings": entry["warnings"]})
 
+    # Gemini fallback when no results
+    ai_suggestions = None
+    if not results:
+        ai_data = gemini_recipe_suggestions(
+            raw_query,
+            user_profile=request.user.profile,
+        )
+        if ai_data.get("recipes"):
+            ai_suggestions = ai_data
 
     latency_ms = int((time.perf_counter() - start) * 1000)
 
-    search_log = SearchLog.objects.create(
+    search_log = log_search(
         user=request.user,
         raw_query=raw_query,
         normalized_query=normalized_query,
@@ -96,5 +101,19 @@ def search_recipes(request):
         "results": results,
         "warnings": warnings,
     }
+    if ai_suggestions:
+        response["ai_suggestions"] = ai_suggestions
 
     return Response(response)
+
+
+@extend_schema(
+    tags=["Search"],
+    summary="Get recent search history for current user",
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def recent_searches(request):
+    from .serializers import SearchLogSerializer
+    logs = SearchLog.objects.filter(user=request.user).order_by("-created_at")[:10]
+    return Response(SearchLogSerializer(logs, many=True).data)

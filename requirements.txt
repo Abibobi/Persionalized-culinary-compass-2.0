@@ -4,12 +4,15 @@ django-crispy-forms==2.3
 spacy==3.8.2
 psycopg2==2.9.10
 djangorestframework
+djangorestframework-simplejwt
 drf-spectacular
 psycopg[binary]
 redis
 celery
 django-filter
+django-cors-headers
 pytest
 pytest-django
 python-dotenv==1.0.1
 rapidfuzz==3.10.1
+google-genai>=1.0.0

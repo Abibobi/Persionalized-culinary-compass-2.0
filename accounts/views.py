@@ -21,11 +21,17 @@ def me(request):
     return Response(serializer.data)
 
 
-@extend_schema(tags=["Profile"], summary="Get current user's profile")
-@api_view(["GET"])
+@extend_schema(tags=["Profile"], summary="Get or update current user's profile")
+@api_view(["GET", "PUT"])
 @permission_classes([IsAuthenticated])
 def my_profile(request):
     profile = request.user.profile
+    if request.method == "PUT":
+        serializer = UserProfileSerializer(profile, data=request.data, partial=False)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
     serializer = UserProfileSerializer(profile)
     return Response(serializer.data)
 
@@ -65,7 +71,19 @@ def onboarding_update(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def dashboard_summary(request):
+    import datetime
+    from recommendations.models import SearchLog
+    from planner.models import MealPlan
+
     profile = request.user.profile
+    saved_count = UserRecipeInteraction.objects.filter(
+        user=request.user, interaction_type="saved"
+    ).count()
+    search_count = SearchLog.objects.filter(user=request.user).count()
+
+    today = datetime.date.today()
+    active_plan = MealPlan.objects.filter(user=request.user, date=today).first()
+
     return Response(
         {
             "user": {
@@ -82,9 +100,9 @@ def dashboard_summary(request):
                 "health_conditions_count": len(profile.health_conditions or []),
             },
             "stats": {
-                "saved_recipes_count": 0,
-                "recent_searches_count": 0,
-                "active_meal_plan": None,
+                "saved_recipes_count": saved_count,
+                "recent_searches_count": search_count,
+                "active_meal_plan": active_plan.id if active_plan else None,
             },
         }
     )
