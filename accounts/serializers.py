@@ -68,7 +68,18 @@ class SaveRecipeSerializer(serializers.Serializer):
 class RecipeMiniSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
-        fields = ("id", "name")
+        fields = (
+            "id",
+            "name",
+            "category",
+            "calories",
+            "protein",
+            "carbs",
+            "fat",
+            "cooking_time",
+            "spicy_level",
+            "is_vegetarian",
+        )
 
 
 class UserRecipeInteractionSerializer(serializers.ModelSerializer):
@@ -77,3 +88,28 @@ class UserRecipeInteractionSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRecipeInteraction
         fields = ("id", "interaction_type", "rating", "note", "created_at", "recipe")
+
+
+class SignupSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=8)
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"],
+        )
+        return user
+
+
+class LoginSerializer(serializers.Serializer):
+    username_or_email = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+
+class AuthTokenSerializer(serializers.Serializer):
+    access = serializers.CharField()
+    refresh = serializers.CharField()
+    user = MeSerializer()

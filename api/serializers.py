@@ -10,11 +10,21 @@ class RecipeDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (
-            "id", "name", "slug", "description", "ingredients", "instructions",
-            "category", "protein", "carbs", "fat", "fiber", "vitamins",
-            "calories", "cooking_time", "spicy_level", "is_vegetarian",
-            "tags", "allergens", "is_vegan", "is_gluten_free",
-            "sugar_g", "sodium_mg", "serving_size_g",
+            "id",
+            "name",
+            "description",
+            "ingredients",
+            "instructions",
+            "category",
+            "protein",
+            "carbs",
+            "fat",
+            "fiber",
+            "vitamins",
+            "calories",
+            "cooking_time",
+            "spicy_level",
+            "is_vegetarian",
         )
 
 

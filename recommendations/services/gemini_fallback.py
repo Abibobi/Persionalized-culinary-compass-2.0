@@ -68,7 +68,7 @@ def gemini_recipe_suggestions(query, user_profile=None):
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=prompt,
             config={
                 "system_instruction": SYSTEM_PROMPT,
