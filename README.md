@@ -2,7 +2,6 @@
 
 > A full-stack, AI-assisted nutrition recommendation platform with hybrid search, safety-aware personalization, and automated meal planning.
 
-[![CI](https://github.com/yourusername/Persionalized-culinary-compass-2.0/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/Persionalized-culinary-compass-2.0/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Django 5.x](https://img.shields.io/badge/django-5.x-green.svg)](https://www.djangoproject.com/)
 
