@@ -50,7 +50,6 @@ def search_recipes(request):
     if parsed_filters.get("max_calories"):
         qs = qs.filter(calories__lte=parsed_filters["max_calories"])
 
-    qs = qs[:50]
     recipes = list(qs)
 
     ranked, _blocked = rank_recipes(
